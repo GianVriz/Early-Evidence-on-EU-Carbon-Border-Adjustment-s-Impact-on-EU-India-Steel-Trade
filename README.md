@@ -8,7 +8,7 @@ The repository includes the following folders,
 * *[Code](https://github.com/GianVriz/Green-bubble-detection-and-propagation-in-the-energy-market/tree/main/Code)* \
   Code used for simulations and analysis.
 
-  * *[Additional materials](https://github.com/GianVriz/Green-bubble-detection-and-propagation-in-the-energy-market/tree/main/Working%20paper)* \
+* *[Additional materials](https://github.com/GianVriz/Green-bubble-detection-and-propagation-in-the-energy-market/tree/main/Working%20paper)* \
     Files related to the working paper.
 
  <p align="center">
