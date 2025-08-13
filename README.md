@@ -12,7 +12,7 @@ The repository includes the following folders,
     Files related to the working paper.
 
  <p align="center">
- <img src="https://github.com/GianVriz/Green-bubble-detection-and-propagation-in-the-energy-market/blob/main/Working%20paper/Bubble_d.png" alt="drawing" width="900" height="400"/> 
+ <img src="https://github.com/GianVriz/Early-Evidence-on-EU-Carbon-Border-Adjustment-s-Impact-on-EU-India-Steel-Trade/tree/main/Additional%20Materials/JRC_IS_EI.png" alt="drawing" width="700" height="500"/> 
 
  ## Authors
 * Gian Luca Vriz - [GianVriz](https://github.com/GianVriz)
