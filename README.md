@@ -6,7 +6,7 @@ This study examines early signals of the EU CBAM’s potential impact on iron an
 The repository includes the following folders,
  
 * *[Code](https://github.com/GianVriz/Early-Evidence-on-EU-Carbon-Border-Adjustment-s-Impact-on-EU-India-Steel-Trade/tree/main/Code)* \
-  Code used for simulations and analysis.
+  Code used for the analysis.
 
 * *[Additional Materials](https://github.com/GianVriz/Early-Evidence-on-EU-Carbon-Border-Adjustment-s-Impact-on-EU-India-Steel-Trade/tree/main/Additional%20Materials)* \
     Files related to the working paper.
