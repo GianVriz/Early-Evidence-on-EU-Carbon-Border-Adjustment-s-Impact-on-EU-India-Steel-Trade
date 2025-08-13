@@ -1,0 +1,780 @@
+---
+title: "The Impact of the EU Carbon Border Adjustment
+Mechanism: Early evidence from the EU-India
+Steel Supply Chain--Code (1)"
+author: "Gian Luca Vriz, Theodor Cojoianu, Carolyn Fischer, Luca Taschini"
+date: "2025-08-08"
+output:
+  pdf_document: default
+---
+
+# Introduction 
+
+This analysis will examine the relationship between India and the European Union, specifically focusing on their interaction within the "*iron & steel*" sector. The list of items are available [here](https://www.dropbox.com/home/CBAM%20Project/02_Data), which are all covered by the Carbon Border Adjustment Mechanism (CBAM). The project incorporates the utilization of the following libraries.
+
+```{r, warning = FALSE, results = 'hide', message = FALSE}
+library(viridis)
+library(Metrics)
+library(readxl)
+library(ggResidpanel)
+library(xtable)
+library(ggdark)
+library(lme4)
+library(countrycode)
+library(gtools)
+library(hrbrthemes)
+library(paletteer)
+library(ggthemes)
+library(forcats)
+library(reshape2)
+library(circlize)
+library(dplyr)
+library(ggforce)
+library(stringr)
+library(tidyr)
+library(lubridate)
+library(zoo)
+library(data.table)
+library(ggplot2)
+library(randomcoloR)
+library(grid)
+library(gridBase)
+```
+
+Firstly the environment for the analysis is uploaded.
+
+```{r, warning = FALSE}
+load("Data_Code1.RData")
+```
+
+
+```{r, warning = FALSE, include=FALSE}
+#HS.Code dataset
+HS_Codes_tot <- data.frame(
+  HS.Code = c(
+    "72012000",
+    "72015010",
+    "72015090",
+    "72021900",
+    "72031000",
+    "72071190",
+    "72071290",
+    "72081000",
+    "72085120",
+    "72085210",
+    "72085310",
+    "72085390",
+    "72091690",
+    "72091710",
+    "72091790",
+    "72102000",
+    "72104100",
+    "72104900",
+    "72106100",
+    "72106900",
+    "72121090",
+    "72125090",
+    "72139110",
+    "72139190",
+    "72139910",
+    "72139990",
+    "72143000",
+    "72149110",
+    "72149190",
+    "72161000",
+    "72162100",
+    "72162200",
+    "72166900",
+    "72171010",
+    "72172010",
+    "72193210",
+    "72193290",
+    "72193310",
+    "72193390",
+    "72193410",
+    "72193490",
+    "72193510",
+    "72193590",
+    "72202021",
+    "72202029",
+    "72210090",
+    "72221111",
+    "72221119",
+    "72222011",
+    "72222019",
+    "72251910",
+    "72251990",
+    "72253090",
+    "72254012",
+    "72259200",
+    "72259900",
+    "72261100",
+    "72269930",
+    "72279050",
+    "73011000",
+    "73021010",
+    "73021090",
+    "73030090",
+    "73044100",
+    "73071110",
+    "73079290",
+    "73083000",
+    "73181900",
+    "73182100",
+    "73182200",
+    "73261990",
+    "73269050",
+    "73030010",
+    "73071190",
+    "73090010",
+    "72092690",
+    "72092790",
+    "73261100",
+    "72105000",
+    "73102990",
+    "73049000",
+    "72230099",
+    "72230091",
+    "73261910",
+    "73079910",
+    "73269060",
+    "73182400",
+    "73079210",
+    "73182300",
+    "73269040",
+    "73269030",
+    "73061100",
+    "73045110",
+    "73090090",
+    "72299090",
+    "73181300",
+    "73042400",
+    "73023000",
+    "72251100",
+    "73042910",
+    "73081000",
+    "72281090",
+    "72292000",
+    "73090030",
+    "72151000",
+    "73102910",
+    "73024000",
+    "72224010",
+    "72279010",
+    "72192190",
+    "73110030",
+    "73062100",
+    "72126000",
+    "72039000",
+    "72052100",
+    "73045930",
+    "72172030",
+    "72112320",
+    "72121010",
+    "72112330",
+    "72272000",
+    "72026000",
+    "72111300",
+    "72092890",
+    "72125030",
+    "72125040",
+    "72269910",
+    "73042200",
+    '73072100',
+    '73084000',
+    '72181000',
+    '73041990',
+    '73042990',
+    '73041910'
+  ),
+  Co2_dir = c(
+    1.90,
+    1.90,
+    1.90,
+    1.44,
+    4.81,
+    2.65,
+    2.65,
+    2.01,
+    2.01,
+    2.01,
+    2.01,
+    2.01,
+    2.03,
+    2.03,
+    2.03,
+    1.97,
+    1.97,
+    1.97,
+    1.97,
+    1.97,
+    1.97,
+    1.97,
+    1.89,
+    1.89,
+    1.89,
+    1.89,
+    1.89,
+    1.89,
+    1.89,
+    1.89,
+    1.89,
+    1.89,
+    1.89,
+    1.88,
+    1.95,
+    2.21,
+    2.21,
+    2.21,
+    2.21,
+    2.21,
+    2.21,
+    2.21,
+    2.21,
+    2.21,
+    2.21,
+    2.14,
+    2.14,
+    2.14,
+    2.14,
+    2.14,
+    1.95,
+    1.98,
+    1.95,
+    1.95,
+    1.92,
+    1.92,
+    1.95,
+    1.92,
+    1.86,
+    2.03,
+    1.93,
+    1.93,
+    2.21,
+    1.86,
+    2.54,
+    1.93,
+    2.46,
+    1.89,
+    1.89,
+    1.89,
+    2.65,
+    1.89,
+    2.21,
+    2.54,
+    1.97,
+    2.03,
+    2.03,
+    2.65,
+    1.97,
+    1.97,
+    1.93,
+    2.13,
+    2.13,
+    2.65,
+    1.93,
+    1.89,
+    1.89,
+    1.93,
+    1.89,
+    1.89,
+    1.89,
+    1.98,
+    1.86,
+    1.97,
+    1.84,
+    1.89,
+    1.86,
+    1.93,
+    1.95,
+    1.93,
+    2.46,
+    1.86,
+    1.84,
+    1.97,
+    1.89,
+    1.97,
+    1.93,
+    2.14,
+    1.86,
+    2.18,
+    1.89,
+    1.98,
+    1.97,
+    4.81,
+    1.90,
+    1.86,
+    1.95,
+    2.03,
+    1.97,
+    2.03,
+    1.86,
+    3.48,
+    2.01,
+    2.03,
+    1.97,
+    1.97,
+    1.92,
+    1.86,
+    1.87,
+    2.46,
+    2.51,
+    1.93,
+    1.93,
+    1.93
+  ),
+  Co2_indir = c(
+    0.17,
+    0.17,
+    0.17,
+    2.08,
+    0.00,
+    0.62,
+    0.62,
+    0.27,
+    0.27,
+    0.27,
+    0.27,
+    0.27,
+    0.36,
+    0.36,
+    0.36,
+    0.39,
+    0.39,
+    0.39,
+    0.39,
+    0.39,
+    0.39,
+    0.39,
+    0.32,
+    0.32,
+    0.32,
+    0.32,
+    0.32,
+    0.32,
+    0.32,
+    0.32,
+    0.32,
+    0.32,
+    0.32,
+    0.49,
+    0.51,
+    1.99,
+    1.99,
+    1.99,
+    1.99,
+    1.99,
+    1.99,
+    1.99,
+    1.99,
+    1.99,
+    1.99,
+    2.17,
+    2.17,
+    2.17,
+    2.17,
+    2.17,
+    0.40,
+    0.49,
+    0.40,
+    0.40,
+    0.51,
+    0.51,
+    0.40,
+    0.51,
+    0.57,
+    0.36,
+    0.29,
+    0.29,
+    0.35,
+    0.35,
+    0.57,
+    0.29,
+    2.55,
+    0.32,
+    0.32,
+    0.32,
+    0.62,
+    0.32,
+    0.35,
+    0.57,
+    0.39,
+    0.36,
+    0.36,
+    0.62,
+    0.39,
+    0.39,
+    0.29,
+    2.36,
+    2.36,
+    0.62,
+    0.29,
+    0.32,
+    0.32,
+    0.29,
+    0.32,
+    0.32,
+    0.32,
+    0.46,
+    0.35,
+    0.39,
+    0.75,
+    0.32,
+    0.35,
+    0.29,
+    0.40,
+    0.29,
+    2.55,
+    0.57,
+    0.75,
+    0.39,
+    0.32,
+    0.39,
+    0.29,
+    2.17,
+    0.57,
+    1.90,
+    0.32,
+    0.46,
+    0.39,
+    0,
+    0.17,
+    0.35,
+    0.51,
+    0.36,
+    0.39,
+    0.36,
+    0.57,
+    2.81,
+    0.27,
+    0.36,
+    0.39,
+    0.39,
+    0.51,
+    0.35,
+    0.43,
+    2.55,
+    2.10,
+    0.29,
+    0.29,
+    0.29
+  ),
+  Co2_tot = c(
+    2.07,
+    2.07,
+    2.07,
+    3.51,
+    4.81,
+    3.27,
+    3.27,
+    2.28,
+    2.28,
+    2.28,
+    2.28,
+    2.28,
+    2.39,
+    2.39,
+    2.39,
+    2.35,
+    2.35,
+    2.35,
+    2.35,
+    2.35,
+    2.35,
+    2.35,
+    2.21,
+    2.21,
+    2.21,
+    2.21,
+    2.21,
+    2.21,
+    2.21,
+    2.21,
+    2.21,
+    2.21,
+    2.21,
+    2.37,
+    2.46,
+    4.19,
+    4.19,
+    4.19,
+    4.19,
+    4.19,
+    4.19,
+    4.19,
+    4.19,
+    4.19,
+    4.19,
+    4.30,
+    4.30,
+    4.30,
+    4.30,
+    4.30,
+    2.35,
+    2.46,
+    2.35,
+    2.35,
+    2.43,
+    2.43,
+    2.35,
+    2.43,
+    2.43,
+    2.39,
+    2.21,
+    2.21,
+    2.56,
+    2.20,
+    3.11,
+    2.21,
+    5.01,
+    2.21,
+    2.21,
+    2.21,
+    3.27,
+    2.21,
+    2.56,
+    3.11,
+    2.35,
+    2.39,
+    2.39,
+    3.27,
+    2.35,
+    2.35,
+    2.21,
+    4.49,
+    4.49,
+    3.27,
+    2.21,
+    2.21,
+    2.21,
+    2.21,
+    2.21,
+    2.21,
+    2.21,
+    2.44,
+    2.20,
+    2.35,
+    2.59,
+    2.21,
+    2.20,
+    2.21,
+    2.35,
+    2.21,
+    5.01,
+    2.43,
+    2.59,
+    2.35,
+    2.21,
+    2.35,
+    2.21,
+    4.30,
+    2.43,
+    4.08,
+    2.21,
+    2.44,
+    2.35,
+    4.81,
+    2.07,
+    2.20,
+    2.46,
+    2.39,
+    2.35,
+    2.39,
+    2.43,
+    6.26,
+    2.28,
+    2.39,
+    2.35,
+    2.35,
+    2.43,
+    2.20,
+    2.30,
+    5.01,
+    4.61,
+    2.21,
+    2.21,
+    2.21
+  )
+)
+```
+
+# Macroeconomic Data Snapshot
+
+The upcoming chunks visualize the percentage share of item values for each HS code.
+
+```{r, warning = FALSE}
+df_group0 <- df_i  %>%
+  group_by(Monthly.Date, HS.Code) %>%
+  dplyr::summarise(n = sum(Reported.Item.Value..USD.)) %>%
+  mutate(percentage = n / sum(n))
+#Overall share
+df_group1 <- df_i  %>%
+  dplyr::group_by(HS.Code) %>%
+  dplyr::summarise(N = sum(Reported.Item.Value..USD.)) %>%
+  mutate(Overall = N / sum(N))
+df_group <- merge(df_group0, df_group1, by = 'HS.Code')
+#Check (TRUE)
+round(sum(df_group1$Overall)) == 1
+#Top HS codes
+Best_item <-
+  df_group1 %>% arrange(desc(Overall))
+Best_item <- Best_item$HS.Code
+df_i$HS.Code2 <- df_i$HS.Code
+df_i[!df_i$HS.Code2 %in% Best_item[1:30], 'HS.Code2'] <- 'Other codes'
+#Removing
+remove(df_group)
+```
+
+```{r, warning = FALSE, fig.dim = c(10, 6), fig.cap = "Monthly aggregation of the value (USD) of CBAM-covered iron and steel items traded from India to the EU, categorized by HS code and ordered in descending share (%)."}
+#Colors
+cols <- c("gray30", paletteer_c("grDevices::rainbow", 30))
+names(cols) <- c("Other codes", Best_item[1:30])
+df_group0 <- df_i  %>%
+  group_by(Monthly.Date, HS.Code2) %>%
+  dplyr::summarise(n = sum(Reported.Item.Value..USD.)) %>%
+  mutate(percentage = n / sum(n))
+#Overall share
+df_group1 <- df_i  %>%
+  dplyr::group_by(HS.Code2) %>%
+  dplyr::summarise(N = sum(Reported.Item.Value..USD.)) %>%
+  mutate(Overall = N / sum(N))
+df_group <- merge(df_group0, df_group1, by = 'HS.Code2')
+#Check (TRUE)
+round(sum(df_group1$Overall)) == 1
+#Plot by top 30 HS codes
+df_group %>% mutate(HS.Code2 = fct_reorder(HS.Code2, desc(Overall))) %>%
+  ggplot(aes(
+    x = Monthly.Date,
+    y = n,
+    fill = HS.Code2,
+    colour = HS.Code2
+  )) + geom_area(alpha = 0.8, position = "fill") +
+  scale_y_continuous(labels = scales::percent) + ylab('Share') +
+  xlab('Time') + ggtitle('USD Value of Iron and Steel Items Traded with EU by HS Code (%)') + scale_colour_manual(
+    values = cols,
+    aesthetics = c("colour", "fill"),
+    name = "Top 30 HS codes"
+  ) + facet_zoom(xlim = c(as.Date('2022-12-01'), as.Date('2024-04-01'))) + theme(
+    axis.text = element_text(size = 7),
+    legend.text = element_text(size = 7),
+    legend.key.size = unit(0.7, 'cm')
+  )
+#Removing
+remove(df_group)
+```
+
+By the analysis, the top 10 HS codes have a cumulative market share of 72\%.
+
+```{r, warning = FALSE}
+df_group_avg <- df_i  %>%
+  group_by(HS.Code2) %>%
+  dplyr::summarise(n = sum(Reported.Item.Value..USD.)) %>%
+  mutate(percentage = n / sum(n))
+#Market share top 10 HS codes
+df_group_avg <-
+  df_group_avg[df_group_avg$HS.Code2 %in% Best_item[c(1:10)], ]  #30 for more than 96%
+sum(df_group_avg$percentage)
+#Removing
+remove(df_group_avg)
+```
+
+As a final macro-level descriptive statistics, embedded CO2e emissions can be calculated using the default values provided by the European Commission. To do this, the Panjiva data should be restricted to items with quantities listed in KGS or MTS. 
+
+```{r, warning = FALSE}
+#Data on KGS and MTS only
+df_im <- merge(df_i, HS_Codes_tot, by = 'HS.Code')
+df_i_kg <- df_im[df_im$Item.Quantity.Unit == 'KGS', ]
+df_i_mts <- df_im[df_im$Item.Quantity.Unit == 'MTS', ]
+#Total Co2e emission
+df_i_kg$Co2 <- df_i_kg$Co2_tot * (df_i_kg$Item.Quantity / 1000)
+df_i_mts$Co2 <- df_i_mts$Co2_tot * df_i_mts$Item.Quantity
+df_ikm <- rbind(df_i_kg, df_i_mts)
+```
+
+```{r, warning = FALSE, fig.dim = c(8, 8), fig.show = "hold", fig.cap = "Traded CO2e emissions from the Indian iron and steel sector to the EU."}
+#2019-2024
+#Data pre-processing
+df_group <- df_ikm %>%
+  group_by(Shipment.Destination, HS.Code2) %>%
+  dplyr::summarise(Co2 = sum(Co2))
+df_group <- acast(df_group, HS.Code2 ~ Shipment.Destination)
+df_group[is.na(df_group)] <- 0
+#Parameter-setting
+circos.clear()
+circos.par(gap.after = c(rep(4, length(rownames(
+  df_group
+)) - 1), 10, rep(4, length(colnames(
+  df_group
+)) - 1), 10),
+start.degree = 0)
+grid.col <-
+  setNames(c(c(
+    paletteer_c("grDevices::rainbow", length(Best_item[1:30])), rep("grey30", 1)
+  ), rep('grey', length(
+    c('Unknown', levels(df_i$Shipment.Destination))
+  ))), c(c(Best_item[1:30], "Other codes"), c(
+    'Unknown', levels(df_i$Shipment.Destination)
+  )))
+par(cex = 0.8, mar = c(0, 0, 0, 0))
+#Chord diagram
+chordDiagram(
+  df_group,
+  annotationTrack = "grid",
+  preAllocateTracks = 1,
+  grid.col = grid.col,
+  reduce = 0
+)
+circos.trackPlotRegion(
+  track.index = 1,
+  panel.fun = function(x, y) {
+    xlim = get.cell.meta.data("xlim")
+    ylim = get.cell.meta.data("ylim")
+    sector.name = get.cell.meta.data("sector.index")
+    circos.text(
+      mean(xlim),
+      ylim[1] + .1,
+      sector.name,
+      facing = "clockwise",
+      niceFacing = TRUE,
+      adj = c(0, 0)
+    )
+  },
+  bg.border = NA
+) + title('Total Co2e emission by HS code and state, 2019-2024', line = -1)
+```
+
+The tonnes of CO2e emission for each country during the period between 2019 and 2024 by the India iron and steel sector are listed below.
+
+```{r, warning = FALSE}
+sort(colSums(df_group))
+```
+
+The dataset contains the following HS codes, which were used in the analysis along with their respective total, direct and indirect default values, as provided by the [European Commission](https://taxation-customs.ec.europa.eu/system/files/2023-12/Default%20values%20transitional%20period.pdf).
+
+```{r, warning = FALSE}
+HS_Codes_tot <- HS_Codes_tot[order(HS_Codes_tot$HS.Code), ]
+rownames(HS_Codes_tot) <- NULL
+xtable(HS_Codes_tot)
+```
+
+```{r, warning = FALSE}
+knitr::knit_exit()
+```
+
+```{r, warning = FALSE}
+#No-matching
+unique(Best_item[!Best_item %in% HS_Codes_tot$HS.Code])
+#Check (0)
+Best_item[!Best_item %in% HS_Codes_tot$HS.Code]
+```
+
+```{r, warning = FALSE}
+#Test
+sum(
+  duplicated(HS_Codes_tot$HS.Code) |
+    duplicated(HS_Codes_tot$HS.Code, fromLast = TRUE)
+) == 0
+sum(Best_item[1:30] %in% HS_Codes_tot$HS.Code) == length(Best_item[1:30])
+sum(HS_Codes_tot$HS.Code %in% vector_codes) == length(HS_Codes_tot$HS.Code)
+```
+

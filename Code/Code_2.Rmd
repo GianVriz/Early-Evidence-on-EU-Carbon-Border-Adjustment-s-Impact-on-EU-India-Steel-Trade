@@ -1,0 +1,521 @@
+---
+title: "The Impact of the EU Carbon Border Adjustment
+Mechanism: Early evidence from the EU-India
+Steel Supply Chain--Code (2)"
+author: "Gian Luca Vriz, Theodor Cojoianu, Carolyn Fischer, Luca Taschini"
+date: "2025-08-08"
+output:
+  pdf_document: default
+---
+
+# Introduction 
+
+This analysis will examine the relationship between India and the European Union, specifically focusing on their interaction within the "*iron & steel*" sector. The list of items are available [here](https://www.dropbox.com/home/CBAM%20Project/02_Data), which are all covered by the Carbon Border Adjustment Mechanism (CBAM). The project incorporates the utilization of the following libraries.
+
+```{r, warning = FALSE, results = 'hide', message = FALSE}
+library(dplyr)
+library(gtools)
+library(lattice)
+library(stargazer)
+library(MASS)
+library(gridExtra)
+library(grid)
+library(ggmagnify)
+library(actuar)
+library(pscl)
+library(data.table)
+library(zoo)
+library(texreg)
+library(rnaturalearthdata)
+library(reshape2)
+library(DescTools)
+library(plyr)
+library(stringr)
+library(paletteer)
+library(forcats)
+library(countrycode)
+library(lmtest)
+library(car)
+library(ggplot2)
+library(tidyr)
+library(lmerTest)
+library(ggResidpanel)
+library(sjPlot)
+library(tidyverse)
+library(hrbrthemes)
+library(viridis)
+library(maps)
+library(mapdata)
+```
+
+# Microeconomic Data Snapshot
+
+Firstly the environment for the analysis is uploaded.
+
+```{r, warning = FALSE}
+load("Data_Code2.RData")
+```
+
+In India, Climate TRACE has tracked over 50 steel manufacturing plants, collecting key data on their activities (tonnes of output), CO$_2$e emissions, and carbon intensity. After linking each plant to its respective owner, a sample of twenty firms is identified.
+
+-	ArcelorMittal Nippon Steel India.
+-	Atibir Industries (Company Limited).
+-	Godawari Power and Ispat (Limited).
+-	Jai Balaji Industries (Limited).
+-	Jayaswal Neco Industries (Limited).
+-	Jindal Stainless (Limited).
+-	Jindal Steel $\&$ Power (Limited).
+-	JSW Steel (Limited).
+-	JSW Ispat Special Products (Limited), previously known as Monnet Ispat $\&$ Energy (Limited).
+-	Msp Steel $\&$ Power (Limited).
+-	Rashmi Metaliks Limited or  Rashmi Group.
+-	Rashtriya Ispat Nigam (Limited).
+-	Shyam Steel Industries (Limited).
+-	Steel Authority Of India (Limited).
+-	Sunflag Iron And Steel Company (Limited).
+-	Tata Metaliks (Limited).
+-	Tata Steel Long Products (Limited).
+-	Tata Steel (Limited).
+-	Vedanta Group (ESL Steel Limited and Vedanta Limited).
+-	Welspun Group or Welspun World.
+
+Descriptive statistics are used to compare direct emission factors derived from Panjiva data with those from the Climate TRACE platform on a global scale. The distribution of estimated direct emission factors for Indian firms, calculated using Climate TRACE data, is shown in blue. The solid blue vertical line marks the Indian average, while the dashed blue vertical line represents the corresponding EU average. In red, the distribution shows default direct emission factors for the same Indian firms, calculated using European Commission default values weighted by export quantities from the Panjiva dataset. The solid red line indicates the Indian average, and the dashed red line represents the EU average from the JRC database.
+
+```{r, warning = FALSE, fig.dim = c(12, 6), fig.cap = "Distribution of direct emission factors."}
+#Data pre - processing
+df_plot <- df_merge_e[, c(4, 7)]
+df_plot <- melt(df_plot)
+mu <- ddply(df_plot, "variable", summarise, grp.mean = mean(value))
+#Distribution plot
+ggplot(df_plot, aes(x = value, fill = variable)) +
+  geom_density(alpha = .25) + xlim(-0.2, 5.9) + xlab("Direct emission factor") +
+  ylab("Density") + geom_vline(
+    data = mu,
+    aes(xintercept = grp.mean),
+    color = c('red', 'blue'),
+    linetype = "solid"
+  ) + guides(fill = guide_legend(title = "Legend")) + geom_vline(
+    aes(xintercept = ci_eu),
+    color = 'blue',
+    linetype = "dashed",
+    size = 0.8,
+    alpha = 0.4
+  ) + geom_vline(
+    aes(xintercept = 1.77),
+    color = 'red',
+    linetype = "dashed",
+    size = 0.8,
+    alpha = 0.4
+  ) +
+  scale_fill_hue(labels = c("Default value", "Estimated value"))  + theme(
+    axis.text = element_text(size = 16),
+    axis.title.x = element_text(size = 16),
+    axis.title.y = element_text(size = 16),
+    legend.text = element_text(size = 14),
+    legend.title = element_text(size = 16)
+  )
+#removing
+remove(df_plot)
+```
+
+The same procedure is applied to the total emission factor (including direct and indirect emission factors), and the resulting values are reported below.
+
+```{r, warning = FALSE}
+ci_eu <- sum(steel_emissions_eu$other1 * steel_emissions_eu$activity,
+             na.rm = TRUE) / sum(steel_emissions_eu$activity, na.rm = TRUE)
+#Weighted average among plants for each state
+df_group <- steel_emissions[, c(2, 14, 22:25)] %>%
+  group_by(iso3_country) %>%
+  dplyr::summarize(
+    Emission_factor_tot = sum(activity * other1, na.rm = TRUE) / sum(activity, na.rm = TRUE),
+    Emission_factor_ind = sum(other3 * other4, na.rm = TRUE) / sum(other3, na.rm = TRUE),
+    .groups = "drop"
+  )
+#NA filtering
+df_group <- na.omit(df_group)
+#Change column names
+colnames(df_group) <- c('Country',
+                        'Total_emissions_factor',
+                        'Electricity_emission_factor')
+df_group <- melt(
+  df_group,
+  id.vars = 'Country',
+  measure.vars = c("Total_emissions_factor", "Electricity_emission_factor"),
+)
+#Carbon intensity India
+ci_india <- df_group[df_group$Country == 'IND', 3][1]
+```
+
+```{r, warning = FALSE, fig.dim = c(12, 6), fig.cap = "Distribution of total emission factors."}
+#Data pre-processing
+df_plot <- df_merge_e[, c(2, 5)]
+df_plot <- melt(df_plot)
+mu <- ddply(df_plot, "variable", summarise, grp.mean = mean(value))
+#Distribution plot
+ggplot(df_plot, aes(x = value, fill = variable)) +
+  geom_density(alpha = .25) + xlim(-0.2, 5.9) + xlab("Total emission factor") +
+  ylab("Density") + geom_vline(
+    data = mu,
+    aes(xintercept = grp.mean),
+    color = c('red', 'blue'),
+    linetype = "solid"
+  ) + guides(fill = guide_legend(title = "Legend")) +
+  scale_fill_hue(labels = c("Default value", "Estimated value")) + geom_vline(
+    aes(xintercept = ci_eu),
+    color = 'blue',
+    linetype = "dashed",
+    size = 0.8,
+    alpha = 0.4
+  ) + geom_vline(
+    aes(xintercept = 1.80),
+    color = 'red',
+    linetype = "dashed",
+    size = 0.8,
+    alpha = 0.4
+  ) + theme(
+    axis.text = element_text(size = 16),
+    axis.title.x = element_text(size = 16),
+    axis.title.y = element_text(size = 16),
+    legend.text = element_text(size = 14),
+    legend.title = element_text(size = 16)
+  )
+#removing
+remove(df_plot)
+```
+
+# Regression analysis (2019-2024)
+
+Firstly the environment for the regression analysis is uploaded.
+
+```{r, warning = FALSE}
+#Change the environment
+rm(list = ls())
+load("Data_Code3.RData")
+#Saving data
+High_frequency_data <- df_linear_MTS
+Low_frequency_data <- df_linear_MTS_M
+```
+
+Due to variations in metric units, the below analysis focuses exclusively on data reported in metric tonnes and kilograms (MTS and KGS). Moreover, outliers within a traded dataset have the potential to distort analysis, skew performance metrics, and result in inaccurate conclusions. They may cause trading algorithms to mislead market interpretations, potentially leading to flawed strategies. Thus, the Interquartile Range (IQR) method is employed to ensure a more robust and accurate analysis.
+
+```{r, warning = FALSE}
+#Log-transformation
+df_linear_MTS$Item.Quantity <- log(df_linear_MTS$Item.Quantity)
+#Outliers detection
+quartiles <- quantile(df_linear_MTS$Item.Quantity, probs = c(0.25, 0.75))
+Q1 <- quartiles[1]
+Q3 <- quartiles[2]
+IQR <- Q3 - Q1
+#Filter the data
+df_linear_MTS <- df_linear_MTS %>%
+  filter(
+    df_linear_MTS$Item.Quantity >= Q1 - 1.5 * IQR,
+    df_linear_MTS$Item.Quantity <= Q3 + 1.5 * IQR
+  )
+```
+
+Both standard Linear Models (LMs) and Linear Mixed Effects Models (LMMs) are considered. The BIC is adopted to compare all proposed approaches.
+
+```{r, warning = FALSE}
+#Baseline level random effects
+df_linear_MTS$Category <- as.factor(paste(
+  df_linear_MTS$HS.Code,
+  df_linear_MTS$Shipper.Ultimate.Parent
+))
+df_linear_MTS$Category <- relevel(df_linear_MTS$Category, ref = '72106900 JSW Steel')
+#Pooled model
+Pooled <-
+  lm(Item.Quantity ~ 1 + Year + Month + CBAM + Diff2 + CBAM:Diff2, data = df_linear_MTS)
+#Random effects model
+Random <-
+  lmer(
+    Item.Quantity ~ 1 + Year + Month + CBAM + Diff2 + CBAM:Diff2 + (1 |
+                                                                      Category),
+    data = df_linear_MTS,
+    REML = FALSE #For model comparison
+  )
+#Fixed effects model
+Fixed <-
+  lm(Item.Quantity ~ 0 + Year + Month + CBAM + Diff2 + CBAM:Diff2 + Category,
+     data = df_linear_MTS,)
+#BIC
+BIC(Pooled)
+BIC(Fixed)
+BIC(Random)
+```
+
+According to the BIC criterion, the optimal specification was a linear mixed effects model. The DID framework, implemented with the LMM, yields the following results.
+
+```{r, warning = FALSE}
+#Random model with time variable
+Random <-
+  lmer(
+    Item.Quantity ~ 1 + Year + Month + CBAM  + Diff2 + Diff2:CBAM + (1 |
+                                                                       Category),
+    data = df_linear_MTS,
+    REML = TRUE
+  ) #For model interpretation
+#Results from the selected model
+summary(Random)
+```
+
+A residuals analysis is conducted to validate the chosen model.
+
+```{r, warning = FALSE, fig.dim = c(9, 7), fig.cap = "Residuals analysis, LMM for item quantities."}
+#Diagnostics
+resid_panel(
+  Random,
+  smoother = TRUE,
+  qqbands = FALSE,
+  plots = c("boxplot", "hist", 'index', 'qq')
+)
+#Removing
+remove(df_linear_MTS)
+```
+
+The same analysis is conducted on data aggregated at the monthly level as well.
+
+```{r, warning = FALSE}
+#Log-transformation
+df_linear_MTS_M$Item.Quantity <- log(df_linear_MTS_M$Item.Quantity + 1)
+```
+
+Both standard LMs and LMMs are considered. The BIC is adopted to compare all proposed approaches.
+
+```{r, warning = FALSE}
+#Baseline level random effects
+df_linear_MTS_M$Category <- as.factor(paste(
+  df_linear_MTS_M$HS.Code,
+  df_linear_MTS_M$Shipper.Ultimate.Parent
+))
+df_linear_MTS_M$Category <- relevel(df_linear_MTS_M$Category, ref = '72106900 JSW Steel')
+#Pooled model
+Pooled <-
+  lm(Item.Quantity ~ 1 + Year + Month + CBAM + Diff2 + CBAM:Diff2, data = df_linear_MTS_M)
+#Random effects model
+Random <-
+  lmer(
+    Item.Quantity ~ 1 + Year + Month + CBAM + Diff2 + CBAM:Diff2 + (1 |
+                                                                      Category),
+    data = df_linear_MTS_M,
+    REML = FALSE #For model comparison
+  )
+#Fixed effects model
+Fixed <-
+  lm(Item.Quantity ~ 0 + Year + Month + CBAM + Diff2 + CBAM:Diff2 + Category,
+     data = df_linear_MTS_M,
+  )
+#BIC
+BIC(Pooled)
+BIC(Fixed)
+BIC(Random)
+```
+
+Based on the BIC criterion, the optimal model proved to be a linear mixed effects model. The DID framework, implemented with the LMM, yields the following results.
+
+```{r, warning = FALSE}
+#Random model with time variable
+Random <-
+  lmer(
+    Item.Quantity ~ 1 + Year + Month + CBAM  + Diff2 + Diff2:CBAM + (1 |
+                                                                       Category),
+    data = df_linear_MTS_M,
+    REML = TRUE
+  ) #For model interpretation
+#Results from the selected model
+summary(Random)
+```
+
+The same procedure was applied to the item’s unit value. So, the IQR method is employed to ensure a more robust and accurate analysis.
+
+```{r, warning = FALSE}
+#Data
+df_linear_MTS <- High_frequency_data
+#Log-transformation
+df_linear_MTS$Item.Unit.Value..USD. <- log(df_linear_MTS$Item.Unit.Value..USD.)
+#Outliers detection
+quartiles <- quantile(df_linear_MTS$Item.Unit.Value..USD., probs = c(0.25, 0.75))
+Q1 <- quartiles[1]
+Q3 <- quartiles[2]
+IQR <- Q3 - Q1
+#Filter the data
+df_linear_MTS <- df_linear_MTS %>%
+  filter(
+    df_linear_MTS$Item.Unit.Value..USD. >= Q1 - 1.5 * IQR,
+    df_linear_MTS$Item.Unit.Value..USD. <= Q3 + 1.5 * IQR
+  )
+```
+
+The BIC is adopted to compare all proposed approaches.
+
+```{r, warning = FALSE}
+#Baseline level random effects
+df_linear_MTS$Category <- as.factor(paste(
+  df_linear_MTS$HS.Code,
+  df_linear_MTS$Shipper.Ultimate.Parent
+))
+df_linear_MTS$Category <- relevel(df_linear_MTS$Category, ref = '72106900 JSW Steel')
+#Pooled model
+Pooled <-
+  lm(Item.Unit.Value..USD. ~ 1 + Year + Month + CBAM + Diff2 + Diff2:CBAM,
+     data = df_linear_MTS)
+#Random effects model
+Random <-
+  lmer(
+    Item.Unit.Value..USD. ~ 1 + Year + Month + CBAM + Diff2 + Diff2:CBAM + (1 |
+                                                                              Category),
+    data = df_linear_MTS,
+    REML = FALSE #For model comparison
+  )
+#Fixed effects model
+Fixed <-
+  lm(
+    Item.Unit.Value..USD. ~ 0 + Year + Month + CBAM + Diff2 + Diff2:CBAM  + as.factor(Category),
+    data = df_linear_MTS
+  )
+#BIC
+BIC(Pooled)
+BIC(Fixed)
+BIC(Random)
+```
+
+Once again, the linear mixed effects model emerged as the best fit. The DID framework, implemented with the LMM, yields the following results.
+
+```{r, warning = FALSE}
+#Random model with time variable
+Random <-
+  lmer(
+    Item.Unit.Value..USD. ~ 1 + Year + Month + CBAM  + Diff2 + Diff2:CBAM + (1 |
+                                                                               Category),
+    data = df_linear_MTS,
+    REML = TRUE
+  ) #For model interpretation
+#Results from the selected model
+summary(Random)
+```
+
+A residuals analysis is conducted to validate the chosen model.
+
+```{r, fig.cap = "Residuals analysis, LMM for unit prices.", fig.dim = c(9,7), warning = FALSE}
+#Diagnostics
+resid_panel(
+  Random,
+  smoother = TRUE,
+  qqbands = FALSE,
+  plots = c("boxplot", "hist", 'index', 'qq')
+)
+#Removing
+remove(df_linear_MTS)
+```
+
+Finally the same procedure was applied to the item’s reported value. First, we filtered the data to include only items with quantities measured in metric tons or kilograms.
+
+```{r, warning = FALSE}
+#KGS & MTS
+df_linear_KGS <- df_linear[df_linear$Item.Quantity.Unit == 'KGS', ]
+df_linear_MTS <- df_linear[df_linear$Item.Quantity.Unit == 'MTS', ]
+#Transformation KGS volume and prices
+df_linear_KGS$Item.Quantity <- df_linear_KGS$Item.Quantity / 1000
+df_linear_KGS$Item.Unit.Value..USD. <- df_linear_KGS$Item.Unit.Value..USD. * 1000
+df_linear_MTS <- rbind(df_linear_KGS, df_linear_MTS) #98%
+df_linear_MTS$Reported.Item.Value..USD. <- df_linear_MTS$Item.Unit.Value..USD. * df_linear_MTS$Item.Quantity
+df_linear_MTS <- df_linear_MTS[df_linear_MTS$Reported.Item.Value..USD. > 0, ]
+#Delta EU average
+df_linear_MTS[df_linear_MTS$Diff > 0, 'Diff'] <- 0
+df_linear_MTS[df_linear_MTS$Diff < 0, 'Diff'] <- 1
+df_linear_MTS[df_linear_MTS$Diff == 0, 'Diff'] <- 'HEF'
+df_linear_MTS[df_linear_MTS$Diff == 1, 'Diff'] <- 'LEF'
+df_linear_MTS$Diff <- as.factor(df_linear_MTS$Diff)
+#Re-levels
+df_linear_MTS$Diff <- relevel(df_linear_MTS$Diff, ref = 'HEF')
+df_linear_MTS$Year <- as.factor(df_linear_MTS$Year)
+df_linear_MTS$Year <- relevel(df_linear_MTS$Year, ref = '2019')
+#Delta India average
+df_linear_MTS[df_linear_MTS$Diff2 > 0, 'Diff2'] <- 0
+df_linear_MTS[df_linear_MTS$Diff2 < 0, 'Diff2'] <- 1
+df_linear_MTS[df_linear_MTS$Diff2 == 0, 'Diff2'] <- 'HEF'
+df_linear_MTS[df_linear_MTS$Diff2 == 1, 'Diff2'] <- 'LEF'
+df_linear_MTS$Diff2 <- as.factor(df_linear_MTS$Diff2)
+df_linear_MTS$Diff2 <- relevel(df_linear_MTS$Diff2, ref = 'LEF')
+df_linear_MTS <- df_linear_MTS[df_linear_MTS$EU.dest == 1, ]
+#Time order
+df_linear_MTS <- df_linear_MTS[order(df_linear_MTS$Departure.Date), ]
+#Aggregation at the monthly level
+df_linear_MTS_M <- df_linear_MTS %>%
+  complete(Departure.Date,
+           Shipper.Ultimate.Parent,
+           HS.Code,
+           fill = list(value = 0))
+df_linear_MTS_M$Monthly.Date <-
+  as.Date(as.yearmon(format(df_linear_MTS_M$Departure.Date, "%Y-%m")))
+df_linear_MTS_M <- df_linear_MTS_M %>%
+  group_by(Monthly.Date, Shipper.Ultimate.Parent, HS.Code) %>%
+  dplyr::summarise(Reported.Item.Value..USD. = sum(Reported.Item.Value..USD., na.rm = TRUE))
+#Variables
+df_linear_MTS_M <- merge(df_linear_MTS_M, HS_Codes_tot, by = 'HS.Code')
+df_linear_MTS_M <- merge(df_linear_MTS_M, df_satellite_e, by = 'Shipper.Ultimate.Parent')
+df_linear_MTS_M$Diff2 <- df_linear_MTS_M$Direct_emission - ci_india
+df_linear_MTS_M[df_linear_MTS_M$Diff2 > 0, 'Diff2'] <- 0
+df_linear_MTS_M[df_linear_MTS_M$Diff2 < 0, 'Diff2'] <- 1
+df_linear_MTS_M[df_linear_MTS_M$Diff2 == 0, 'Diff2'] <- 'HEF'
+df_linear_MTS_M[df_linear_MTS_M$Diff2 == 1, 'Diff2'] <- 'LEF'
+df_linear_MTS_M$Diff2 <- as.factor(df_linear_MTS_M$Diff2)
+df_linear_MTS_M$Diff2 <- relevel(df_linear_MTS_M$Diff2, ref = 'LEF')
+df_linear_MTS_M$CBAM <- ifelse(df_linear_MTS_M$Monthly.Date < '2023-10-01', 0, 1)
+df_linear_MTS_M$Year <- as.factor(year(df_linear_MTS_M$Monthly.Date))
+#Rename
+colnames(df_linear_MTS_M)[c(5)] <- c('EF_item')
+#Month
+df_linear_MTS_M$Month <- as.factor(month(df_linear_MTS_M$Monthly.Date))
+#Log-transformation
+df_linear_MTS_M$Reported.Item.Value..USD. <- log(df_linear_MTS_M$Reported.Item.Value..USD. + 1)
+```
+
+The BIC is adopted to compare all proposed approaches.
+
+```{r, warning = FALSE}
+#Baseline level random effects
+df_linear_MTS_M$Category <- as.factor(paste(
+  df_linear_MTS_M$HS.Code,
+  df_linear_MTS_M$Shipper.Ultimate.Parent
+))
+df_linear_MTS_M$Category <- relevel(df_linear_MTS_M$Category, ref = '72106900 JSW Steel')
+#Pooled model
+Pooled <-
+  lm(Reported.Item.Value..USD. ~ 1 + Year + Month + CBAM + Diff2 + Diff2:CBAM,
+     data = df_linear_MTS_M)
+#Random effects model
+Random <-
+  lmer(
+    Reported.Item.Value..USD. ~ 1 + Year + Month + CBAM + Diff2 + Diff2:CBAM + (1 |
+                                                                                  Category),
+    data = df_linear_MTS_M,
+    REML = FALSE #For model comparison
+  )
+#Fixed effects model
+Fixed <-
+  lm(
+    Reported.Item.Value..USD. ~ 0 + Year + Month + CBAM + Diff2 + Diff2:CBAM + as.factor(Category),
+    data = df_linear_MTS_M
+  )
+#BIC
+BIC(Pooled)
+BIC(Fixed)
+BIC(Random)
+```
+
+Even in this last case, the linear mixed effects model emerged as the best fit. The DID framework, implemented with the LMM, yields the following results.
+
+```{r, warning = FALSE}
+#Random model with time variable
+Random <-
+  lmer(
+    Reported.Item.Value..USD. ~ 1 + Year + Month + CBAM  + Diff2 + Diff2:CBAM + (1 |
+                                                                                   Category),
+    data = df_linear_MTS_M,
+    REML = TRUE
+  ) #For model interpretation
+#Results from the selected model
+summary(Random)
+```
+
