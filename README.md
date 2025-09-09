@@ -12,7 +12,7 @@ The repository includes the following folders,
     Files related to the working paper.
 
  <p align="center">
- <img src="https://github.com/GianVriz/Early-Evidence-on-EU-Carbon-Border-Adjustment-s-Impact-on-EU-India-Steel-Trade/blob/main/Additional%20Materials/JRC_IS_EI.png" alt="drawing" width="700" height="500"/> 
+ <img src="https://github.com/GianVriz/Early-Evidence-on-EU-Carbon-Border-Adjustment-s-Impact-on-EU-India-Steel-Trade/blob/main/Additional%20Materials/Figures/JRC_IS_EI.png" alt="drawing" width="700" height="500"/> 
 
  ## Authors
 * Gian Luca Vriz - [GianVriz](https://github.com/GianVriz)
