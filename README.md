@@ -3,7 +3,7 @@
 This study examines early signals of the EU CBAM’s impact on iron and steel exporters from India by integrating firm-level export data with third-party esti- mates of manufacturers’ emissions and production. Changes in trade flows and pricing during the CBAM reporting phase indicate that high-emission-intensity firms have decreased both their average unit prices and shipment sizes to the EU, while low-emission-intensity firms have not changed shipment behavior and may have benefited from increasing prices. Such supply chain adjustments are in line with EU policy intentions, creating opportunities for low-emission producers while reducing reliance on high-emission suppliers to the EU.
 
   # Info
-The repository includes the following folders,
+The data are not available as they are protected for privacy reasons. To ensure reproducibility without sharing the raw data, we created two PDF files using R Markdown. The repository contains the following folders,
  
 * *[Code](https://github.com/GianVriz/Early-Evidence-on-EU-Carbon-Border-Adjustment-s-Impact-on-EU-India-Steel-Trade/tree/main/Code)* \
   Code used for the analysis.
