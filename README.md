@@ -1,6 +1,6 @@
 # Abstract
 
-This study examines early signals of the EU CBAM’s potential impact on iron and steel exporters in India by integrating firm-level export data with third- party estimates of manufacturers’ emissions and production. Changes in trade flows and pricing during the CBAM reporting phase indicate that high-emission- intensity firms have decreased both their average unit prices and shipment sizes to the EU, while low-emission-intensity firms have not changed shipment behavior but may have benefited from increasing prices. Such supply chain adjustments are in line with the policy’s intentions, creating opportunities for low-emission producers while reducing reliance on high-emission suppliers to the EU
+This study examines early signals of the EU CBAM’s impact on iron and steel exporters from India by integrating firm-level export data with third-party esti- mates of manufacturers’ emissions and production. Changes in trade flows and pricing during the CBAM reporting phase indicate that high-emission-intensity firms have decreased both their average unit prices and shipment sizes to the EU, while low-emission-intensity firms have not changed shipment behavior and may have benefited from increasing prices. Such supply chain adjustments are in line with EU policy intentions, creating opportunities for low-emission producers while reducing reliance on high-emission suppliers to the EU.
 
   # Info
 The repository includes the following folders,
